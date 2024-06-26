@@ -8,7 +8,6 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from config import *
-import winsound
 
 def main():
     login()
@@ -19,8 +18,8 @@ def main():
 
 def login():
     browser.get('https://login.zhipin.com/')
-    print("[+] 你有60秒的时间扫码登录boss直聘")
-    sleep(60)
+    print("[+] 你有20秒的时间扫码登录boss直聘")
+    sleep(20)
     browser.refresh()
 
 
@@ -29,12 +28,13 @@ def get_search_lists():
     for job in jobs:
         for city_code in citys:
             # url = f'https://www.zhipin.com/web/geek/job?query={job}&city={city_code}&experience={experience}&degree={degree}'
-            url = f'https://www.zhipin.com/web/geek/job?position=100102&city={city_code}&experience={experience}&degree={degree}'
-            urls.append((url, f"{citys[city_code]}_{job}.xlsx"))
+            url = f'https://www.zhipin.com/web/geek/job?query={job}&position=100102&city={city_code}&experience={experience}&degree={degree}'
+            urls.append((url, f"{job}.xlsx"))
     return urls
 
 
 def get_jobs_lists(search_url, name):
+    domain = name.split('.')[0].split('_')[-1]
     browser.get(search_url)
     print("Sleep")
     sleep(7)
@@ -65,15 +65,25 @@ def get_jobs_lists(search_url, name):
                 '公司': [],
                 '岗位': [],
                 '薪资': [],
-                '福利': [],
+                '位置': [],
                 '经验要求': [],
                 '学历要求': [],
-                '加分项目': [],
+                '公司规模': [],
                 '所属行业': [],
-                '位置': [],
-                '公司规模': []
+                '加分项目': [],
+                '招聘人': [],
+                '招聘人职位': [],
+                '详情': [],
+                '链接': [],
+                '福利': [],
+                '领域': []
             }
             for li in lis:
+                recruiter_name = ""
+                recruiter_position = ""
+                job_link = ""
+                job_detail = ""
+
                 job_name = li.find_element(By.CLASS_NAME, 'job-name').text
                 salary = li.find_element(By.CLASS_NAME, 'salary').text
                 addr = li.find_element(By.CLASS_NAME, 'job-area').text
@@ -93,17 +103,40 @@ def get_jobs_lists(search_url, name):
                 for x in company_tag_list.find_elements(By.TAG_NAME, 'li'): 
                     if("人" in x.text): company_people = x.text
 
-                print(f"[公司]: {company_name} [岗位]: {job_name} [薪资]: {salary} [福利]: {welfare} [经验要求]: {experience} [学历要求]: {degree} [加分项目]: {excess} [所属行业]: {industry} [位置]: {addr} [公司规模]:{company_people}")
+                # 提取岗位详细链接
+                try:
+                    job_link = li.find_element(By.XPATH, ".//div[@class='job-card-body clearfix']/a[@class='job-card-left']").get_attribute('href')
+                    # 提取招聘人名字
+                    recruiter_name = li.find_element(By.XPATH, ".//div[@class='info-public']").text.split()[0]
+                    # 提取招聘人职位
+                    recruiter_position = li.find_element(By.XPATH, ".//div[@class='info-public']/em").text
+                except:
+                    pass
+
+                # browser.get(job_link)
+                # sleep(7)
+                # try:
+                #     job_detail =  browser.find_elements(By.CLASS_NAME, "job-sec-text")[0].get_attribute('innerHTML')
+                #     job_detail.replace("<br>", "\n")
+                # except:
+                #     job_detail = ""
+
+                print(f"[公司]: {company_name} [岗位]: {job_name} [薪资]: {salary} [经验要求]: {experience} [学历要求]: {degree} [加分项目]: {excess} [所属行业]: {industry} [位置]: {addr} [公司规模]:{company_people} [福利]: {welfare}")
                 info['公司'].append(company_name)
                 info['岗位'].append(job_name)
                 info['薪资'].append(salary)
-                info['福利'].append(welfare)
                 info['经验要求'].append(experience)
                 info['学历要求'].append(degree)
                 info['加分项目'].append(excess)
                 info['所属行业'].append(industry)
                 info['位置'].append(addr)
                 info['公司规模'].append(company_people)
+                info['招聘人'].append(recruiter_name)
+                info['招聘人职位'].append(recruiter_position)
+                info['详情'].append(job_detail)
+                info['链接'].append(job_link)
+                info['福利'].append(welfare)
+                info['领域'].append(domain)
             save_data(name, pd.DataFrame(info))
     except Exception as e:
         print(e)
@@ -117,13 +150,18 @@ def save_data(name: str, new_data: dict):
             '公司': [],
             '岗位': [],
             '薪资': [],
-            '福利': [],
+            '位置': [],
             '经验要求': [],
             '学历要求': [],
-            '加分项目': [],
+            '公司规模': [],
             '所属行业': [],
-            '位置': [],
-            '公司规模': []
+            '加分项目': [],
+            '招聘人': [],
+            '招聘人职位': [],
+            '详情': [],
+            '链接': [],
+            '福利': [],
+            '领域': []
         })
     save = pd.concat([data, new_data], axis=0)
     save.to_excel(name, index=False)
@@ -136,10 +174,10 @@ if __name__ == '__main__':
     # options.add_argument("--window-size=1920x1080")  # 设置分辨率
     # options.add_argument("--disable-gpu")  # 关闭Gpu
     # options.add_argument("--hide-scrollbars")  # 隐藏滚动条
-    options.binary_location = "C:\\Users\\86137\\Downloads\\Win_x64_961656_chrome-win\\chrome-win\\chrome.exe"
+    # options.binary_location = "/home/hao/Software/chromedriver"
     # options.add_argument("--blink-settings=imagesEnabled=false")  # 不加载图片
     # options.add_argument("--headless")  # 无界面模式
-    browser = webdriver.Chrome(chrome_options=options)
+    browser = webdriver.Chrome(options=options)
     main()
     print("[+] Fuck boss success end ...")
     browser.quit()
