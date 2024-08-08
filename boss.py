@@ -28,7 +28,7 @@ def get_search_lists():
     for job in jobs:
         for city_code in citys:
             # url = f'https://www.zhipin.com/web/geek/job?query={job}&city={city_code}&experience={experience}&degree={degree}'
-            url = f'https://www.zhipin.com/web/geek/job?query={job}&position=100102&city={city_code}&experience={experience}&degree={degree}'
+            url = f'https://www.zhipin.com/web/geek/job?query={job}&city={city_code}&experience={experience}&degree={degree}'
             urls.append((url, f"{job}.xlsx"))
     return urls
 
